@@ -15,18 +15,23 @@ export interface Block {
     previousHash: string;
 }
 
-export class Node {
-
+export interface Node {
+    address: string;
 }
 
 export class Blockchain {
+    readonly TRANSACTIONS_PER_BLOCK = 10;
     nodeOwner = 'mike';
     chain: Block[] = [];
     transactionPool: Transaction[] = [];
-    nodes = [];
+    nodes: Node[] = [];
 
     get lastBlock(){
         return this.chain[this.chain.length -1];
+    }
+
+    constructor() {
+        this.createBlock(1, '0');
     }
 
     /**
@@ -54,7 +59,12 @@ export class Blockchain {
     createTransaction(sender: string, recipient: string, amount: number) {
         let id = this.hash({sender, recipient, amount});
         this.transactionPool.push({id, sender, recipient, amount});
-        console.log(`Transaction created, Amount: ${amount} In block: ${this.lastBlock?.index ?? 0 + 1}'`)
+        console.log(`Transaction created, Amount: ${amount} In block: ${this.lastBlock?.index ?? 0 + 1}`)
+
+        if(this.TRANSACTIONS_PER_BLOCK == this.transactionPool.length) {
+            this.mineBlock()
+        }
+
         return this.lastBlock?.index ?? 0 + 1;
     }
 
@@ -75,6 +85,7 @@ export class Blockchain {
         while(!this.isValidProof(lastProof, proof)) {
             proof += 1;
         }
+        console.log(`Hash has been guessed correctly after ${proof} attempts.`)
         return proof;
     }
 
@@ -84,21 +95,25 @@ export class Blockchain {
     isValidProof(lastProof: number, proof: number): boolean {
         let guess = crypto.hash.sha256.hash(`${lastProof}${proof}`)
         let guessHash = crypto.codec.hex.fromBits(guess);
-        console.log("Guess Hash..", guessHash)
-        if (guessHash.substring(0, 4) == '0000') {
-            console.log("Has has been guessed correctly!")
-        }
-        return guessHash.substring(0, 4) == '0000';
+        // console.log("Guess Hash..", guessHash)
+        return guessHash.substring(0, 5) == '00000';
     }
 
     /**
-     * 
+     * Mines a block and adds miner reward to transaction pool before forging the block and adding it to the chain
      */
-    mineBlock() {
+    async mineBlock() {
+        console.time('Blocked Mined')
         let lastProof = this.lastBlock.proof;
         let proof = this.proofOfWork(lastProof);
 
         // Create reward for finding proof
         this.createTransaction('0', this.nodeOwner, 1);
+
+        // Forge new block
+        let previousHash = this.hash(this.lastBlock);
+        let block = this.createBlock(proof, previousHash);
+
+        console.timeEnd('Blocked Mined')
     }
 }

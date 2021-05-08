@@ -1,4 +1,5 @@
 import * as crypto from 'sjcl';
+import http from 'http';
 
 export interface Transaction {
     id: string;
@@ -26,8 +27,8 @@ export class Blockchain {
     transactionPool: Transaction[] = [];
     nodes: Node[] = [];
 
-    get lastBlock(){
-        return this.chain[this.chain.length -1];
+    get lastBlock() {
+        return this.chain[this.chain.length - 1];
     }
 
     constructor() {
@@ -40,7 +41,7 @@ export class Blockchain {
      */
     createBlock(proof: number, previousHash?: string) {
         let block = {
-            index: this.chain.length +1,
+            index: this.chain.length + 1,
             timestamp: (new Date()).valueOf(),
             transactions: this.transactionPool,
             proof,
@@ -51,17 +52,17 @@ export class Blockchain {
         // console.log('Block Created: ', block)
         return block;
     }
-    
+
     /**
      * Add a transactions to the pool and broadcast this transaction to connected nodes
      * TODO: Broadcast to connected nodes
      */
     createTransaction(sender: string, recipient: string, amount: number) {
-        let id = this.hash({sender, recipient, amount});
-        this.transactionPool.push({id, sender, recipient, amount});
+        let id = this.hash({ sender, recipient, amount });
+        this.transactionPool.push({ id, sender, recipient, amount });
         console.log(`Transaction created, Amount: ${amount} Block: ${this.lastBlock?.index ?? 0 + 1}`)
 
-        if(this.TRANSACTIONS_PER_BLOCK == this.transactionPool.length) {
+        if (this.TRANSACTIONS_PER_BLOCK == this.transactionPool.length) {
             this.mineBlock()
         }
 
@@ -82,7 +83,7 @@ export class Blockchain {
      */
     proofOfWork(lastProof: number) {
         let proof = 0;
-        while(!this.isValidProof(lastProof, proof)) {
+        while (!this.isValidProof(lastProof, proof)) {
             proof += 1;
         }
         console.log(`Hash has been guessed correctly after ${proof} attempts.`)
@@ -116,5 +117,25 @@ export class Blockchain {
 
         console.timeEnd('Blocked Mined')
         return block;
+    }
+
+    addNodePeer(address: string) {
+        if (this.nodes.find(n => n.address === address)) {
+            console.log("New node discovery already exists");
+            return;
+        }
+        this.nodes.push({ address });
+    }
+
+    broadcastTransaction(tx: Transaction) {
+        this.nodes.forEach(node => {
+            http.post(`${node.}`)
+        })
+    }
+
+    receiveTransaction(tx: Transaction) {
+        if (this.transactionPool.find(t => t.id !== tx.id)) return
+        this.transactionPool.push(tx);
+        console.log(`New broadcasted transaction added to the pool ${tx.id}`)
     }
 }

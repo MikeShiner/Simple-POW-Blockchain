@@ -1,26 +1,27 @@
-import { Blockchain, Transaction } from "./blockchain";
-import * as _ from 'lodash'
-let blockchain = new Blockchain()
+import express, { Request, Response } from 'express';
+import { Blockchain, Transaction } from './blockchain';
 
-// Create Genesis block
-blockchain.createBlock(1, '0');
+export class Server {
+    app: express.Application = express();
+    router: express.Router = express.Router();
+    blockchain: Blockchain = new Blockchain();
 
-let transaction2 = {sender: 'mike', receiver: 'tom', amount: 5};
-let transaction3 = {sender: 'dan', receiver: 'emma', amount: 10};
-let transaction4 = {sender: 'sophie', receiver: 'mike', amount: 2.4};
-blockchain.createTransaction(transaction2.sender, transaction2.receiver, transaction2.amount);
-blockchain.createTransaction(transaction3.sender, transaction3.receiver, transaction3.amount);
-blockchain.createTransaction(transaction4.sender, transaction4.receiver, transaction4.amount);
+    constructor(port: number) {
+        this.app.listen(port, () => console.log(`Node started on port ${port}`));
 
-blockchain.mineBlock();
+        this.router.get('/discover', (req: Request, res: Response) => {
+            let nodeAddr: string = <string>req.query.id;
+            this.blockchain.addNodePeer(nodeAddr);
+            res.sendStatus(200);
+        });
 
+        this.router.post('/transaction', (req: Request, res: Response) => {
+            let tx = req.body as Transaction;
+            this.blockchain.receiveTransaction(tx);
+            res.sendStatus(200);
+        });
 
-
-const transactionGenerator = () => {
-    let userList = ['mike', 'dan', 'tom', 'emma', 'sophie'];
-    var [sender, receiver] =  _.sampleSize(userList, 2)
-    let amount = _.random(0.1, 100)
-    blockchain.createTransaction(sender, receiver, amount);
+        this.app.use('/', this.router);
+    }
 }
-
-setInterval(transactionGenerator, _.random(1000, 5000))
+new Server(parseInt(process.env.PORT ?? '5000'));

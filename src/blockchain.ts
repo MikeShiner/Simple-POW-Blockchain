@@ -48,7 +48,7 @@ export class Blockchain {
         }
         this.transactionPool = [];
         this.chain.push(block)
-        console.log('Block Created: ', block)
+        // console.log('Block Created: ', block)
         return block;
     }
     
@@ -59,7 +59,7 @@ export class Blockchain {
     createTransaction(sender: string, recipient: string, amount: number) {
         let id = this.hash({sender, recipient, amount});
         this.transactionPool.push({id, sender, recipient, amount});
-        console.log(`Transaction created, Amount: ${amount} In block: ${this.lastBlock?.index ?? 0 + 1}`)
+        console.log(`Transaction created, Amount: ${amount} Block: ${this.lastBlock?.index ?? 0 + 1}`)
 
         if(this.TRANSACTIONS_PER_BLOCK == this.transactionPool.length) {
             this.mineBlock()
@@ -115,5 +115,6 @@ export class Blockchain {
         let block = this.createBlock(proof, previousHash);
 
         console.timeEnd('Blocked Mined')
+        return block;
     }
 }

@@ -1,5 +1,6 @@
 import * as crypto from 'sjcl';
-import http from 'http';
+import axios from 'axios'
+import { v4 as uuid } from 'uuid';
 
 export interface Transaction {
     id: string;
@@ -58,10 +59,13 @@ export class Blockchain {
      * TODO: Broadcast to connected nodes
      */
     createTransaction(sender: string, recipient: string, amount: number) {
-        let id = this.hash({ sender, recipient, amount });
-        this.transactionPool.push({ id, sender, recipient, amount });
+        let tx = { id: uuid().split('-')[0], sender, recipient, amount }
+        let id = this.hash(tx);
+        this.transactionPool.push(tx);
         console.log(`Transaction created, Amount: ${amount} Block: ${this.lastBlock?.index ?? 0 + 1}`)
 
+        this.broadcastTransaction(tx)
+        console.log("Transaction pool: " + this.transactionPool.length)
         if (this.TRANSACTIONS_PER_BLOCK == this.transactionPool.length) {
             this.mineBlock()
         }
@@ -127,15 +131,21 @@ export class Blockchain {
         this.nodes.push({ address });
     }
 
-    broadcastTransaction(tx: Transaction) {
-        this.nodes.forEach(node => {
-            http.post(`${node.}`)
-        })
+    async broadcastTransaction(tx: Transaction) {
+        for (let node of this.nodes) {
+            let res = await axios.post(`http://${node.address}/receive/transactions`, tx)
+            if (res.status !== 200) {
+                console.error('Failed to broadcast transaction to ' + node.address);
+            }
+        }
     }
 
     receiveTransaction(tx: Transaction) {
-        if (this.transactionPool.find(t => t.id !== tx.id)) return
+        if (this.transactionPool.find(t => t.id == tx.id)) return
         this.transactionPool.push(tx);
-        console.log(`New broadcasted transaction added to the pool ${tx.id}`)
+        console.log(`New broadcasted transaction '${tx.id}' added to the pool`)
+        if (this.TRANSACTIONS_PER_BLOCK == this.transactionPool.length) {
+            this.mineBlock()
+        }
     }
 }

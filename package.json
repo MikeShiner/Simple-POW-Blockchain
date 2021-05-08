@@ -1,0 +1,24 @@
+{
+  "name": "simple-pow-blockchain",
+  "version": "0.0.1",
+  "description": "Rudimentary blockchain with Proof of Work consensus algorithm",
+  "main": "app.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MikeShiner/Simple-POW-Blockchain.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MikeShiner/Simple-POW-Blockchain/issues"
+  },
+  "homepage": "https://github.com/MikeShiner/Simple-POW-Blockchain#readme",
+  "devDependencies": {
+    "@types/sjcl": "^1.0.29",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "sjcl": "^1.0.8"
+  }
+}
